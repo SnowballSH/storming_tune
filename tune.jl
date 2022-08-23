@@ -7,22 +7,28 @@ UPDATE_ENGINE = false
 ENGINE_BUILD_COMMAND = `zig build -Drelease-fast -Dtarget-name=engine -p ./`
 ENGINE_FILE = "$(ENGINE_FOLDER)/bin/engine"
 
+PRECISION = 10
+
 # https://www.chessprogramming.org/Stockfish%27s_Tuning_Method
-# (Name, Base, MinDelta:MaxDelta, do_tune?)
+# (Name, Base, MinDelta:MaxDelta, do_tune?, float?)
 PARAMETERS = [
-    ("RFPMultiplier", 60, -25:25, true),
-    ("RFPImprovingDeduction", 70, -25:25, true),
-    ("NMPBase", 5, -2:2, false),
-    ("NMPDepthDivisor", 5, -2:2, false),
-    ("NMPBetaDivisor", 214, -40:40, false)
+    ("LMRWeight", 0.647173874704215, Int(-0.30 * 10^PRECISION):Int(0.30 * 10^PRECISION), true, true),
+    ("LMRBias", 1.301347679383754, Int(-0.60 * 10^PRECISION):Int(0.60 * 10^PRECISION), true, true),
+    ("RFPMultiplier", 62, -25:25, false, false),
+    ("RFPImprovingDeduction", 70, -25:25, false, false),
+    ("NMPBase", 5, -2:2, false, false),
+    ("NMPDepthDivisor", 5, -2:2, false, false),
+    ("NMPBetaDivisor", 214, -40:40, false, false)
 ]
-APPLY_FACTOR = 0.3
+
+# This is multiplied to delta
+APPLY_FACTOR = ℯ / π^2  # ~0.2754
 
 CUTECHESS_COMMAND = "cutechess-cli"
 CONCURRENCY = 8
-GAMES = 50
+GAMES = 64
 BOOK = "noob_4moves.epd"
-TC = "10+0.1"
+TC = "9+0.09"
 NUM_ITERS = 10
 
 function download_latest_engine()
@@ -83,7 +89,7 @@ function update_value(prev_val::AbstractFloat, change::AbstractFloat, result::Ab
     else
         prev_val += smooth(result) * change
     end
-    return max(1.0, prev_val)
+    return max(eps(), prev_val)
 end
 
 __dt = rng::UnitRange{Int} -> rng[Int(clamp(round((clamp(randn(), -4.0, 4.0) + 4.0) / 8.0 * (length(rng) + 1)), 1, length(rng)))]
@@ -104,8 +110,12 @@ end
 # Modify to adapt other formats
 function param_to_code(params)::String
     s::String = ""
-    for param = params
-        s *= "pub const $(param[1]) = $(Int(round(param[2])));\n"
+    for (i, param) = enumerate(params)
+        if PARAMETERS[i][5]
+            s *= "pub const $(param[1]) = $(round(param[2], digits=PRECISION));\n"
+        else
+            s *= "pub const $(param[1]) = $(Int(round(param[2])));\n"
+        end
     end
     return s
 end
@@ -133,7 +143,10 @@ function tune()
         b_params = copy(current_params)
         for i in eachindex(PARAMETERS)
             if PARAMETERS[i][4]  # is tuning
-                dt::Int = choose_delta(PARAMETERS[i][3])
+                dt = choose_delta(PARAMETERS[i][3])
+                if PARAMETERS[i][5]
+                    dt *= (1.0 / 10^PRECISION)
+                end
                 deltas[i] = dt
                 a_params[i] = (a_params[i][1], a_params[i][2] + dt)
                 b_params[i] = (b_params[i][1], b_params[i][2] - dt)
@@ -153,7 +166,7 @@ function tune()
 
         println("Starting Match...")
         res::AbstractFloat = test_engines("a", "b")
-        println("Result: $res\nUpdating weights...")
+        println("Updating weights...")
         for i in eachindex(PARAMETERS)
             if PARAMETERS[i][4]
                 current_params[i] = (current_params[i][1], update_value(current_params[i][2], APPLY_FACTOR * deltas[i], res))
