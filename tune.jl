@@ -12,24 +12,26 @@ PRECISION = 10
 # https://www.chessprogramming.org/Stockfish%27s_Tuning_Method
 # (Name, Base, MinDelta:MaxDelta, do_tune?, float?)
 PARAMETERS = [
-    ("LMRWeight", 0.647173874704215, Int(-0.30 * 10^PRECISION):Int(0.30 * 10^PRECISION), true, true),
-    ("LMRBias", 1.301347679383754, Int(-0.60 * 10^PRECISION):Int(0.60 * 10^PRECISION), true, true),
-    ("RFPMultiplier", 62, -25:25, false, false),
-    ("RFPImprovingDeduction", 70, -25:25, false, false),
+    ("LMRWeight", 0.647173874704215, Int(-0.40 * 10^PRECISION):Int(0.40 * 10^PRECISION), true, true),
+    ("LMRBias", 1.301347679383754, Int(-0.70 * 10^PRECISION):Int(0.70 * 10^PRECISION), true, true),
+    ("RFPDepth", 5, -4:4, true, false),
+    ("RFPMultiplier", 62, -40:40, true, false),
+    ("RFPImprovingDeduction", 70, -40:40, false, false),
     ("NMPBase", 5, -2:2, false, false),
     ("NMPDepthDivisor", 5, -2:2, false, false),
-    ("NMPBetaDivisor", 214, -40:40, false, false)
+    ("NMPBetaDivisor", 214, -80:80, true, false),
+    ("RazoringMargin", 320, -200:200, true, false)
 ]
 
 # This is multiplied to delta
-APPLY_FACTOR = ℯ / π^2  # ~0.2754
+APPLY_FACTOR = 0.2754
 
 CUTECHESS_COMMAND = "cutechess-cli"
 CONCURRENCY = 8
-GAMES = 64
+GAMES = 40
 BOOK = "noob_4moves.epd"
-TC = "9+0.09"
-NUM_ITERS = 10
+TC = "20+0.5"
+NUM_ITERS = 16
 
 function download_latest_engine()
     if (isdir(ENGINE_FOLDER))
