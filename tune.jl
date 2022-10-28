@@ -2,7 +2,7 @@ using Dates
 
 ENGINE_REPO = "https://github.com/SnowballSH/Avalanche"
 ENGINE_FOLDER = "engine/"
-UPDATE_ENGINE = false
+UPDATE_ENGINE = true
 
 ENGINE_BUILD_COMMAND = `zig build -Drelease-fast -Dtarget-name=engine -p ./`
 ENGINE_FILE = "$(ENGINE_FOLDER)/bin/engine"
@@ -12,26 +12,28 @@ PRECISION = 10
 # https://www.chessprogramming.org/Stockfish%27s_Tuning_Method
 # (Name, Base, MinDelta:MaxDelta, do_tune?, float?)
 PARAMETERS = [
-    ("LMRWeight", 0.647173874704215, Int(-0.40 * 10^PRECISION):Int(0.40 * 10^PRECISION), true, true),
-    ("LMRBias", 1.301347679383754, Int(-0.70 * 10^PRECISION):Int(0.70 * 10^PRECISION), true, true),
-    ("RFPDepth", 5, -4:4, true, false),
-    ("RFPMultiplier", 62, -40:40, true, false),
+    ("LMRWeight", 0.647173874704215, Int(-0.40 * 10^PRECISION):Int(0.40 * 10^PRECISION), false, true),
+    ("LMRBias", 1.301347679383754, Int(-0.70 * 10^PRECISION):Int(0.70 * 10^PRECISION), false, true),
+    ("RFPDepth", 5, -4:4, false, false),
+    ("RFPMultiplier", 62, -40:40, false, false),
     ("RFPImprovingDeduction", 70, -40:40, false, false),
     ("NMPBase", 5, -2:2, false, false),
     ("NMPDepthDivisor", 5, -2:2, false, false),
-    ("NMPBetaDivisor", 214, -80:80, true, false),
-    ("RazoringMargin", 320, -200:200, true, false)
+    ("NMPBetaDivisor", 214, -80:80, false, false),
+    ("RazoringMargin", 320, -200:200, false, false),
+    ("AspirationWindow", 15, -11:11, true, false),
+    ("AspirationWindowBonus", 1.35, Int(-0.9 * 10^PRECISION):Int(0.9 * 10^PRECISION), true, true),
 ]
 
 # This is multiplied to delta
-APPLY_FACTOR = 0.2754
+APPLY_FACTOR = 0.44
 
 CUTECHESS_COMMAND = "cutechess-cli"
 CONCURRENCY = 8
-GAMES = 40
+GAMES = 32
 BOOK = "noob_4moves.epd"
-TC = "20+0.5"
-NUM_ITERS = 16
+TC = "12+0.12"
+NUM_ITERS = 8
 
 function download_latest_engine()
     if (isdir(ENGINE_FOLDER))
@@ -150,8 +152,8 @@ function tune()
                     dt *= (1.0 / 10^PRECISION)
                 end
                 deltas[i] = dt
-                a_params[i] = (a_params[i][1], a_params[i][2] + dt)
-                b_params[i] = (b_params[i][1], b_params[i][2] - dt)
+                a_params[i] = (a_params[i][1], max(0.0, a_params[i][2] + dt))
+                b_params[i] = (b_params[i][1], max(0.0, b_params[i][2] - dt))
             end
         end
 
