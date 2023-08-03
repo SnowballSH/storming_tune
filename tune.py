@@ -1,4 +1,5 @@
 import pathlib
+import copy
 import numpy as np
 import math
 import json
@@ -80,7 +81,7 @@ def play_match(a_variables, b_variables):
     with open(pathlib.Path(config.WORKING_DIRECTORY, "engines.json"), "w") as f:
         f.write(json_string)
 
-    cmd = config.CUTECHESS_COMMAND
+    cmd = copy.deepcopy(config.CUTECHESS_COMMAND)
     cmd.extend(f"-engine conf=A tc={config.TIME_CONTROL}".split())
     cmd.extend(f"-engine conf=B tc={config.TIME_CONTROL}".split())
 
@@ -89,9 +90,15 @@ def play_match(a_variables, b_variables):
     )
     process.wait()
 
-    for line in process.stdout.read().decode().split("\n"):
-        if "Score of A vs B" in line:
+    out = process.stdout.read().decode().split("\n")
+
+    print(*out[-7:], "\n")
+
+    for line in out[::-1]:
+        if line.startswith("Score of A vs B"):
+            print(line)
             return float(re.search(r"\[([0-9\.]+)\]", line).group(1))
+    process.stdout.close()
 
 
 def main():

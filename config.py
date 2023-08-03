@@ -21,10 +21,10 @@ VARIABLES = [
 WORKING_DIRECTORY = "./engine"
 ENGINE_COMMAND = "./Avalanche"
 CUTECHESS_COMMAND = """./cutechess-cli -tournament gauntlet \
--concurrency 6 -recover -pgnout games.pgn \
+-concurrency 7 -recover -pgnout games.pgn \
 -draw movenumber=40 movecount=4 score=2 -resign movecount=4 score=300 \
--each proto=uci -openings file=UHO.pgn format=pgn -repeat -games 40""".split()
-TIME_CONTROL = "16.0+0.16"
+-each proto=uci -openings file=UHO.pgn format=pgn -repeat -games 50""".split()
+TIME_CONTROL = "15.0+0.12"
 HASH = 64
 
 NUM_ITERATIONS = 10
