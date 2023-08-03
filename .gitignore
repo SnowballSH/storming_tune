@@ -1,3 +1,5 @@
 temp/
 engine/
 *.epd
+.vscode
+__pycache__
